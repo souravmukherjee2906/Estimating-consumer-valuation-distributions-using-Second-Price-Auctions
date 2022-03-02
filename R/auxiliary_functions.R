@@ -43,3 +43,4 @@ subsamp_median_bias <- function(data, estimate, subsamp_exp = 2/3, nsub = 1000){
 	Delta <- abs(Delta - 1/2)
 	return(Delta)
 }
+
