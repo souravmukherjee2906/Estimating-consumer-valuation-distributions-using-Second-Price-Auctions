@@ -45,15 +45,15 @@ HulC1d_Ebay <- function(data.in, eval.points, alpha = 0.1, MLE.Cutoff = 0){
   idx <- 1
   for(idx in 1:B){
     # partioning real data
-    temp.data  <- NULL
-    temp.data$Raw.biddata.list<- data.in$Raw.biddata.list[TMP[[idx]]]
+    temp.data <- NULL
+    temp.data$Raw.biddata.list <- data.in$Raw.biddata.list[TMP[[idx]]]
     temp.data$reserve.price <- data.in$reserve.price[TMP[[idx]]]
     temp.data$N.auction <- length(TMP[[idx]])
     temp.data$True.Method <- data.in$True.Method
     temp.data$reserve.price <- data.in$reserve.price
-    temp.data$auction.window = data.in$auction.window
-    temp.data$class =  "SecondPriceAuction.Rawdata"
-    F.local<- MLE.from.raw.data.2ndprice(temp.data, MLE.Cutoff)
+    temp.data$auction.window <- data.in$auction.window
+    temp.data$class <- "SecondPriceAuction.Rawdata"
+    F.local <- MLE.from.raw.data.2ndprice(temp.data, MLE.Cutoff)
     
     MLE_est[,idx] <- approx(x = F.local$MLE$F.x, y = F.local$MLE$F.y, xout = eval.points,
 			    method = "linear", yleft = 0, yright = 1)$y
@@ -64,7 +64,7 @@ HulC1d_Ebay <- function(data.in, eval.points, alpha = 0.1, MLE.Cutoff = 0){
 	
   CI.Init <- apply(Init_est, 1, range)
   CI.MLE <- apply(MLE_est, 1, range)
-  rownames(CI.MLE)<- rownames(CI.Init)<- c("lwr", "upr")
+  rownames(CI.MLE) <- rownames(CI.Init)<- c("lwr", "upr")
   CI.Init[1,] <- pmax(CI.Init[1,] - log(2)*B/nn, 0) # expansion by log(2)/m (split size) to account for binomial dist
   CI.Init[2,] <- pmin(CI.Init[2,] + log(2)*B/nn, 1) # expansion to account for binomial dist
   CI.MLE[1, ] <- pmax(CI.MLE[1, ] - log(2)*B/nn, 0) # expansion by log(2)/m (split size) to account for binomial dist
@@ -88,7 +88,7 @@ HulC1d_Ebay <- function(data.in, eval.points, alpha = 0.1, MLE.Cutoff = 0){
   extra.info <- list(MLE_est,Init_est) # all the estimators based on the data splits.
   
   MakeBand <- function(temp){
-    rval<- NULL
+    rval <- NULL
     rval$lwr <- approxfun(eval.points, cummax(temp[1,]), method = "constant", 
 			  yleft = 0, yright = max(temp[1,]), f = 0, ties = "ordered")
     class(rval$lwr) <- c( "stepfun")
