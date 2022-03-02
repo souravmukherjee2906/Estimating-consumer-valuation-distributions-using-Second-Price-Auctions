@@ -1,7 +1,9 @@
-## For non-negative Delta and t, set
-## 	Q(B; Delta, t) = [(1/2 - Delta)^B + (1/2 + Delta)^B]*(1 + t)^{-B+1}
-## The following function finds the smallest B for a given t such that
-##	Q(B; Delta, t) <= alpha.
+#------------------------------------------------------------------------------------
+##  For non-negative Delta and t, set
+##  Q(B; Delta, t) = [(1/2 - Delta)^B + (1/2 + Delta)^B]*(1 + t)^{-B+1}
+##  The following function finds the smallest B for a given t such that
+##  Q(B; Delta, t) <= alpha.
+#------------------------------------------------------------------------------------
 solve_for_B <- function(alpha, Delta, t){
   if(Delta == 0.5 && t == 0){
     stop("Delta is 0.5 and t = 0. The estimator lies only on one side of the parameter!")
@@ -18,12 +20,15 @@ solve_for_B <- function(alpha, Delta, t){
 	return(B)
 }
 
-## For any estimation function estimate() that returns a
-## univariate estimator, subsamp_median_bias() provides an
-## estimate of the median bias using subsampling.
-## The subsample size used is (sample size)^{subsamp_exp}.
-## The input data is a data frame or a matrix.
-## nsub is the number of subsamples
+
+#------------------------------------------------------------------------------------
+##  For any estimation function estimate() that returns a
+##  univariate estimator, subsamp_median_bias() provides an
+##  estimate of the median bias using subsampling.
+##  The subsample size used is (sample size)^{subsamp_exp}.
+##  The input data is a data frame or a matrix.
+##  nsub is the number of subsamples.
+#------------------------------------------------------------------------------------
 subsamp_median_bias <- function(data, estimate, subsamp_exp = 2/3, nsub = 1000){
 	data <- as.matrix(data)
 	nn <- nrow(data)
