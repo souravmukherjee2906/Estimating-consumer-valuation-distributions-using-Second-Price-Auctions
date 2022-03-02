@@ -1,37 +1,74 @@
-rm(list = ls())   # Remove everything from the Global environment
-library(rmutil)   # For generating from pareto distribution
-library(ggplot2)
-library(GoFKernel)
+## This file contains codes for the model performance evaluation of
+## both F_{initial} and F_{MLE} (estimates of F, obtained from our
+## proposed non-parametric methodology) on the Xbox 7 day auctions dataset 
+## found in the "dataset" folder of this repository.
+
+
+#------------------------------------------------------------------------------------
+## Remove everything from the Global environment
+#------------------------------------------------------------------------------------
+rm(list = ls())
+
+
+#------------------------------------------------------------------------------------
+## Install the required packages into R if it's not already installed.
+#------------------------------------------------------------------------------------
+if(!require(GoFKernel)) install.packages("GoFKernel")
+if(!require(transport)) install.packages("transport")
+
+
+#------------------------------------------------------------------------------------
+## Load the required packages into the R environment.
+#------------------------------------------------------------------------------------
+library(GoFKernel)  # For the inverse function of a CDF.
 library(transport)  # For calculating Wasserstein distance between two distribution functions.
 
+
+#------------------------------------------------------------------------------------
+## Source all the functions from "Functions.R" and "HulC.R"
+#------------------------------------------------------------------------------------
 source("EbayFunctions_Ver2.R")
 source("HulC.R")
 
+
+#------------------------------------------------------------------------------------
+## Read and load the dataset. Then, extract the necessary informations (in raw format)
+## from the dataset.
+#------------------------------------------------------------------------------------
 raw.unorganized.data <- read.csv("Xbox_7day_auctions.csv", header = T)
 raw.data.list <- Xbox.data.extract.function(raw.unorganized.data)
 
 
-#---------------------------------------------------------------------------------------------------
-## Comparing G_lambda(F.init), G_lambda(F.mle) with ecdf(selling prices)
-
-# Training dataset
+#------------------------------------------------------------------------------------
+## Train the model with the training dataset.
+## The training dataset is obtained by splitting the whole Xbox 7 day 
+## auctions dataset (e.g., 1:1 and 2:1 split for the training:test split)
+## and taking that corresponding proportion as our training data.
+## We then compare G_lambda(F.init(.)), G_lambda(F.mle(.)) with the empirical CDF
+## of final selling prices, on the training dataset.
+#------------------------------------------------------------------------------------
+## Training dataset
 proportion.of.train <- 1/2
-train.idx <- sample.int(raw.data.list$N.auction, ceiling(proportion.of.train * raw.data.list$N.auction))
-
+train.idx <- sample.int(raw.data.list$N.auction, 
+                        ceiling(proportion.of.train * raw.data.list$N.auction))
 train.data.list <- raw.data.list
 train.data.list$Raw.biddata.list <- train.data.list$Raw.biddata.list[sort(train.idx)]
 train.data.list$N.auction <- length(train.idx)
 train.data.list$reserve.price <- train.data.list$reserve.price[sort(train.idx)]
 train.processed.data <- Data.Gen.2nd.Price.Processed(train.data.list)
 
-reserve.price.Cutoff.train <- ceiling(quantile(train.processed.data$reserve.price, probs = 0.25))
-
-Init.Values.train <- initialization.2nd.price(data = train.processed.data, reserve.price.Cutoff.train)
+## Implementing our proposed non-parametric methodology on the training dataset
+## to get the estimates F_{initial} and F_{MLE} of true F.
+reserve.price.Cutoff.train <- ceiling(quantile(train.processed.data$reserve.price, 
+                                               probs = 0.25) )
+Init.Values.train <- initialization.2nd.price(data = train.processed.data, 
+                                              reserve.price.Cutoff.train)
 theta.init.train <- (1-Init.Values.train$F.y)/ c(1,(1-Init.Values.train$F.y)[-length(Init.Values.train$F.y)])
-MLE.train <- MLE.2ndprice.init(train.processed.data, lambda.in = Init.Values.train$lambda, theta.in = theta.init.train, tol = 1e-5)
+MLE.train <- MLE.2ndprice.init(train.processed.data, 
+                               lambda.in = Init.Values.train$lambda, 
+                               theta.in = theta.init.train, tol = 1e-5)
 
-
-## Comparing the ecdf of selling prices with the function: G_lambda(F_0(.))
+## G_lambda(F(.))
 G.lambda.fun <- function(Fx){
   lambda.tau <- Init.Values.train$lambda * train.processed.data$auction.window
   numerator <- ((exp(lambda.tau*Fx) - 1)*((lambda.tau*(1 - Fx)) + 1)) - (lambda.tau*Fx)
@@ -39,101 +76,97 @@ G.lambda.fun <- function(Fx){
   return(numerator/denominator)
 }
 
+## Vector of values of G_lambda(F.init(.)) evaluated at training dataset.
 G.lambda.F.init.train.vec <- sapply(Init.Values.train$F.y, FUN = G.lambda.fun)
+## Vector of values of G_lambda(F.mle(.)) evaluated at training dataset.
 G.lambda.F.MLE.train.vec <- sapply(MLE.train$F.y, FUN = G.lambda.fun)
 
-## Testing dataset
-test.data.list <- raw.data.list
-test.data.list$Raw.biddata.list <- test.data.list$Raw.biddata.list[-sort(train.idx)]
-test.data.list$N.auction <- raw.data.list$N.auction - length(train.idx)
-test.data.list$reserve.price <- test.data.list$reserve.price[-sort(train.idx)]
-test.processed.data <- Data.Gen.2nd.Price.Processed(test.data.list)
+## ecdf of final selling prices of all the auctions in the training dataset.
+F.s.train.function <- ecdf(train.processed.data$selling.price)
 
-# reserve.price.Cutoff.test <- ceiling(quantile(test.processed.data$reserve.price, probs = 0.25))
-# Init.Values.test <- initialization.2nd.price(data = test.processed.data, reserve.price.Cutoff.test)
-F.s.test.function <- ecdf(test.processed.data$selling.price)
-
-## Rohit Code
-plot(F.s.test.function)
+## Plot of G_lambda(F.init(.)) vs. G_lambda(F.mle(.)) vs. the empirical CDF
+## of final selling prices, evaluated on the training dataset.
+plot(F.s.train.function)
 lines(Init.Values.train$F.x, G.lambda.F.init.train.vec, col="blue")
 lines(MLE.train$F.x, G.lambda.F.MLE.train.vec, col="red", type="l")
-# plot(MLE.train$F.x, MLE.train$F.y, col="red")
-# plot(Init.Values.train$F.x, MLE.train$F.y, col="red")
 
 
-## Performing Kolmogorov-Smirnov statistic
+#------------------------------------------------------------------------------------
+## Evaluate the model performance.
+## We construct both F.init.train and F.mle.train based on the training dataset, and
+## compare each of them with F.mle.test, constructed based on the testing data.
 
-# K.S.init <- ks.test(x = F.s.test.data.vec, y = G.lambda.F.init.train.At.test.data.vec)
-# print(K.S.init)
-# print(paste("K.S.distance.init = ", K.S.init$statistic))
-# K.S.MLE <- ks.test(x = F.s.test.data.vec, y = G.lambda.F.MLE.train.At.test.data.vec)
-# print(K.S.MLE)
-# print(paste("K.S.distance.MLE = ", K.S.MLE$statistic))
+## F.init.train represents the estimate F_{initial} constructed based on the training dataset.
+## F.mle.train represents the estimate F_{MLE} constructed based on the training dataset.
+## F.mle.test represents the estimate F_{MLE} constructed based on the testing dataset.
 
-## finding L2-norm
-# library(wavethresh)
-# l2norm.init <- wavethresh::l2norm(F.s.test.data.vec, G.lambda.F.init.train.At.test.data.vec)
-# l2norm.MLE <- wavethresh::l2norm(F.s.test.data.vec, G.lambda.F.MLE.train.At.test.data.vec)
-# print(paste("l2norm.init = ", l2norm.init))
-# print(paste("l2norm.MLE = ", l2norm.MLE))
-
-## finding L-infinity norm
-# linfnorm.init <- wavethresh::linfnorm(F.s.test.data.vec, G.lambda.F.init.train.At.test.data.vec)
-# linfnorm.MLE <- wavethresh::linfnorm(F.s.test.data.vec, G.lambda.F.MLE.train.At.test.data.vec)
-# print(paste("L-infinity norm.init = ", linfnorm.init))
-# print(paste("L-infinity norm.MLE = ", linfnorm.MLE))
+## So, basically we compare the three distribution functions: F.init.train, F.mle.train,
+## and F.mle.test.
+## We also find the Wasserstein distance between F.mle.test and both of F.init.train,
+## F.mle.test, averaged over 1000 replications of the random splits with same proportion.
+#------------------------------------------------------------------------------------
 
 
 
-
-#---------------------------------------------------------------------------------------------------
-## Comparing the three distribution functions: F.init.train, F.mle.train, and F.mle.test.
-
-nrep <- 1000
-proportion.of.train.vec <- c(1/2, 2/3)
-
+nrep <- 1000  # Number of replications.
+proportion.of.train.vec <- c(1/2, 2/3)  # Vector of split proportions.
 wasserstein.distance.mat <- matrix(0, nrow = length(proportion.of.train.vec), ncol = 3)
-colnames(wasserstein.distance.mat) <- c("proportion.of.training.data", "distance-F.init.train-To-F.mle.test",
+colnames(wasserstein.distance.mat) <- c("proportion.of.training.data", 
+                                        "distance-F.init.train-To-F.mle.test",
                                         "distance-F.mle.train-To-F.mle.test")
 wasserstein.distance.mat[,1] <- proportion.of.train.vec
 
-# par(mfrow = c(2,1))
+par(mfrow = c(2,1))
 
 for(pp in 1:length(proportion.of.train.vec)){
   dist.mat <- matrix(0, nrow = nrep, ncol = 2)
-  
   for(ii in 1:nrep){
-    train.idx <- sample.int(raw.data.list$N.auction, ceiling(proportion.of.train.vec[pp] * raw.data.list$N.auction))
+    ## Training dataset
+    train.idx <- sample.int(raw.data.list$N.auction, 
+                            ceiling(proportion.of.train.vec[pp] * raw.data.list$N.auction))
     train.data.list <- raw.data.list
     train.data.list$Raw.biddata.list <- train.data.list$Raw.biddata.list[sort(train.idx)]
     train.data.list$N.auction <- length(train.idx)
     train.data.list$reserve.price <- train.data.list$reserve.price[sort(train.idx)]
     train.processed.data <- Data.Gen.2nd.Price.Processed(train.data.list)
     
-    reserve.price.Cutoff.train <- ceiling(quantile(train.processed.data$reserve.price, probs = 0.25))
-    Init.Values.train <- initialization.2nd.price(data = train.processed.data, reserve.price.Cutoff.train)
+    ## Implementing our proposed non-parametric methodology on the training dataset
+    ## to get the estimates F_{initial} and F_{MLE} based on training data.
+    reserve.price.Cutoff.train <- ceiling(quantile(train.processed.data$reserve.price, 
+                                                   probs = 0.25))
+    Init.Values.train <- initialization.2nd.price(data = train.processed.data, 
+                                                  reserve.price.Cutoff.train)
     theta.init.train <- (1-Init.Values.train$F.y)/ c(1,(1-Init.Values.train$F.y)[-length(Init.Values.train$F.y)])
-    MLE.train <- MLE.2ndprice.init(train.processed.data, lambda.in = Init.Values.train$lambda, theta.in = theta.init.train, tol = 1e-5)
+    MLE.train <- MLE.2ndprice.init(train.processed.data, 
+                                   lambda.in = Init.Values.train$lambda, 
+                                   theta.in = theta.init.train, tol = 1e-5)
     
+    ## Testing dataset
     test.data.list <- raw.data.list
     test.data.list$Raw.biddata.list <- test.data.list$Raw.biddata.list[-sort(train.idx)]
     test.data.list$N.auction <- raw.data.list$N.auction - length(train.idx)
     test.data.list$reserve.price <- test.data.list$reserve.price[-sort(train.idx)]
     test.processed.data <- Data.Gen.2nd.Price.Processed(test.data.list)
     
-    reserve.price.Cutoff.test <- ceiling(quantile(test.processed.data$reserve.price, probs = 0.25))
-    Init.Values.test <- initialization.2nd.price(data = test.processed.data, reserve.price.Cutoff.test)
+    ## Implementing our proposed non-parametric methodology on the testing dataset
+    ## to get the estimates F_{initial} and F_{MLE} based on testing data.
+    reserve.price.Cutoff.test <- ceiling(quantile(test.processed.data$reserve.price, 
+                                                  probs = 0.25))
+    Init.Values.test <- initialization.2nd.price(data = test.processed.data, 
+                                                 reserve.price.Cutoff.test)
     theta.init.test <- (1-Init.Values.test$F.y)/ c(1,(1-Init.Values.test$F.y)[-length(Init.Values.test$F.y)])
-    MLE.test <- MLE.2ndprice.init(test.processed.data, lambda.in = Init.Values.test$lambda, theta.in = theta.init.test, tol = 1e-5)
+    MLE.test <- MLE.2ndprice.init(test.processed.data, 
+                                  lambda.in = Init.Values.test$lambda, 
+                                  theta.in = theta.init.test, tol = 1e-5)
     
-    # Plotting of F.init.train vs. F.mle.train vs. F.mle.test
-    # plot(Init.Values.train$F.x, Init.Values.train$F.y, type = "l", col = "blue",
-    #      main = paste("F.init.train [blue] vs. F.mle.train [red] vs. F.mle.test [orange], 
-    #                   for proportion of training = ", round(proportion.of.train.vec[pp], digits = 4)),
-    #      xlab = "x", ylab = "F(x)")
-    # lines(MLE.train$F.x, MLE.train$F.y, col = "red")
-    # lines(MLE.test$F.x, MLE.test$F.y, col = "orange")
-    
+    ## Plotting of F.init.train vs. F.mle.train vs. F.mle.test
+    plot(Init.Values.train$F.x, Init.Values.train$F.y, type = "l", col = "blue",
+         main = paste("F.init.train [blue] vs. F.mle.train [red] vs. F.mle.test [orange],
+                      for proportion of training = ", 
+                      round(proportion.of.train.vec[pp], digits = 4) ),
+         xlab = "x", ylab = "F(x)")
+    lines(MLE.train$F.x, MLE.train$F.y, col = "red")
+    lines(MLE.test$F.x, MLE.test$F.y, col = "orange")
     
     ## Calculating the Wasserstein distance between two distribution functions
     diff.F.init.train.y <- c(Init.Values.train$F.y[1], diff(Init.Values.train$F.y))
@@ -151,22 +184,18 @@ for(pp in 1:length(proportion.of.train.vec)){
     dist.mat[ii,1] <- wasserstein1d(a = x.init.train, b = x.MLE.train, p = 1,
                                     wa = weights.init.train,
                                     wb = weights.MLE.train )
-    
     dist.mat[ii,2] <- wasserstein1d(a = x.MLE.train, b = x.MLE.test, p = 1,
                                     wa = weights.MLE.train,
                                     wb = weights.MLE.test )
   }
   
-  # boxplot.matrix(dist.mat, use.cols = T, main = paste("Boxplots with", round(proportion.of.train.vec[pp], digits = 4),
-  #                                                     "proportion of training data"),
-  #                xlab = "Boxplots of W(F.init.train, F.mle.test) and W(F.mle.train, F.mle.test) values",
-  #                ylab = "Wasserstein distances")
-  
   wasserstein.distance.mat[pp,2] <- mean(dist.mat[,1])
   wasserstein.distance.mat[pp,3] <- mean(dist.mat[,2])
 }
 
-# par(mfrow = c(1,1))
-print(wasserstein.distance.mat)
+par(mfrow = c(1,1))
 
+## Matrix/Table containing the Wasserstein distances between F.mle.test and both of F.init.train,
+## F.mle.test, averaged over 1000 replications of the random splits with same proportion.
+print(wasserstein.distance.mat)
 
