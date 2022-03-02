@@ -57,6 +57,7 @@ piecewise.unif.invcdf <- function(u, para1 = 2, para2 = 4){
 ##  \tau is fixed.                                            
 #------------------------------------------------------------------------------------
 
+## Raw data collection
 Data.Gen.2nd.Price.Raw <- function(N.auction, auction.window, lambda.true,
                                    reserve.price,
                                    method = c("unif", "pareto", "gamma",
@@ -112,6 +113,7 @@ Data.Gen.2nd.Price.Raw <- function(N.auction, auction.window, lambda.true,
 
 
 
+## Data processing of the raw collected data so that we can use it for further data analysis.
 Data.Gen.2nd.Price.Processed <- function(Raw.data.list){
   if(Raw.data.list$class != "SecondPriceAuction.Rawdata") stop("This fucntion works 
                                                                only with data in the 
