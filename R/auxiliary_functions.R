@@ -8,7 +8,8 @@ solve_for_B <- function(alpha, Delta, t){
   if(Delta == 0.5 && t == 0){
     stop("Delta is 0.5 and t = 0. The estimator lies only on one side of the parameter!")
   }
-	B_low <- max(floor(log((2 + 2*t)/alpha, base = 2 + 2*t)), floor(log((1 + t)/alpha, base = (2 + 2*t)/(1 + 2*Delta))))
+	B_low <- max(floor(log((2 + 2*t)/alpha, base = 2 + 2*t)), 
+		     floor(log((1 + t)/alpha, base = (2 + 2*t)/(1 + 2*Delta))) )
 	B_up <- ceiling(log((2 + 2*t)/alpha, base = (2 + 2*t)/(1 + 2*Delta)))
 	Q <- function(B){
 		((1/2 - Delta)^B + (1/2 + Delta)^B)*(1 + t)^(-B + 1)
@@ -37,7 +38,7 @@ subsamp_median_bias <- function(data, estimate, subsamp_exp = 2/3, nsub = 1000){
 	fulldata_estimate <- estimate(data)
 	Delta <- 0
 	for(b in 1:nsub){
-		TMP <- estimate(data[sample(nn, subsamp_size, replace = FALSE),,drop=FALSE])
+		TMP <- estimate(data[sample(nn, subsamp_size, replace = FALSE), , drop=FALSE] )
 		Delta <- Delta + (TMP - fulldata_estimate <= 0)/nsub
 	}
 	Delta <- abs(Delta - 1/2)
