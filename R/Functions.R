@@ -536,7 +536,7 @@ Xbox.data.extract.function <- function(raw.unorganized.data){
     Raw.biddata.matrix[,4] <- rep(reserve.price[jj], arrival.count[jj])
     
     Raw.biddata.list[[jj]] <- Raw.biddata.matrix
-  }# END of for(jj in 1: N.auction)
+  } # END of for(jj in 1: N.auction)
   
   Raw.data.list <- list(Raw.biddata.list = Raw.biddata.list,
                         N.auction = N.auction,
