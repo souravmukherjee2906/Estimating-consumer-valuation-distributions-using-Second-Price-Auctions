@@ -80,7 +80,7 @@ lines(MLE$F.x, MLE$F.y, col = "red")
 
 
 #------------------------------------------------------------------------------------
-# HulC Confidence bands for both F_{MLE} and F_{initial} in the whole dataset
+# HulC Confidence bands for both F_{MLE} and F_{initial}
 #------------------------------------------------------------------------------------
 points(x.med.vec, as.vector( Hulc.Conf$CI.Init[1,]), col="blue", lwd=1)
 points(x.med.vec, as.vector( Hulc.Conf$CI.Init[2,]), col="blue", lwd=1)
