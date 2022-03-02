@@ -105,9 +105,6 @@ lines(MLE.train$F.x, G.lambda.F.MLE.train.vec, col="red", type="l")
 ## We also find the Wasserstein distance between F.mle.test and both of F.init.train,
 ## F.mle.test, averaged over 1000 replications of the random splits with same proportion.
 #------------------------------------------------------------------------------------
-
-
-
 nrep <- 1000  # Number of replications.
 proportion.of.train.vec <- c(1/2, 2/3)  # Vector of split proportions.
 wasserstein.distance.mat <- matrix(0, nrow = length(proportion.of.train.vec), ncol = 3)
