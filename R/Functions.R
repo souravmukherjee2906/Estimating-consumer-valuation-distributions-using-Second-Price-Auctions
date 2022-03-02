@@ -401,8 +401,8 @@ MLE.2ndprice <- function(data, lambda.in, theta.in, tol){
 #------------------------------------------------------------------------------------
 ##  Function for finding the values (at the observed data points) of the 
 ##  Non-parametric MLE of the consumer valuation distribution function F,
-##  with the modifications that the with first few (index.cutoff many)    
-##  theta_i's defined to be theta_initial_i's.
+##  with the modifications that the first few (index.cutoff many)    
+##  theta_i_{MLE}'s defined to be the corresponding theta_initial_i's.
 #------------------------------------------------------------------------------------
 
 MLE.2ndprice.init <- function(data, lambda.in, theta.in, tol){
