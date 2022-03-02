@@ -453,10 +453,10 @@ initialization.2nd.price <- function(data, reserve.price.Cutoff){
     return(numerator/denominator)
   }
   
-  selling.price <- data$selling.price[intersect(which(data$reserve.price < reserve.price.Cutoff), 
-                                                which(is.na(data$selling.price)==FALSE))]
   # Removing the NA terms and those auction's first jump values whose reserve prices are comparatively higher.
   # We are taking those auctions whose reserve prices are less than an user-specified reserve.price.Cutoff.
+  selling.price <- data$selling.price[intersect(which(data$reserve.price < reserve.price.Cutoff), 
+                                                which(is.na(data$selling.price)==FALSE))]
   
   Selling.price.cdf.inverse <- inverse(G.lambda.fun, lower = 0, upper = 1)
   G.n <- ecdf(selling.price)
@@ -464,10 +464,10 @@ initialization.2nd.price <- function(data, reserve.price.Cutoff){
     return(Selling.price.cdf.inverse(G.n(x)))
   }
   
-  first.jumps.vec <- data$first.jumps[intersect(which(data$reserve.price < reserve.price.Cutoff),
-                                                which(is.na(data$first.jumps)==FALSE))]
   # Removing the NA terms and those auction's first jump values whose reserve prices are comparatively higher.
   # We are taking those auctions whose reserve prices are less than an user-specified reserve.price.Cutoff.
+  first.jumps.vec <- data$first.jumps[intersect(which(data$reserve.price < reserve.price.Cutoff),
+                                                which(is.na(data$first.jumps)==FALSE))]
   
   G.n.first.jumps <- ecdf(first.jumps.vec)
   F.f <- function(x){
