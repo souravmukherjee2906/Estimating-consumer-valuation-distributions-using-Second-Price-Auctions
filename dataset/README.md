@@ -1,0 +1,4 @@
+- This folder contains the online second price auction dataset of 93 auctions of Xbox game consoles on eBay.
+- The dataset is collected from "Modeling Online Auctions, Jank & Shmueli, Wiley & sons., 2010" (source: https://www.modelingonlineauctions.com/).
+- Each auction in this dataset lasts for 7 days.
+- I added a small random noise to all the bids in the data set to avoid equality of bid values from different bidders.
