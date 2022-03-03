@@ -134,7 +134,8 @@ Data.Gen.2nd.Price.Processed <- function(Raw.data.list){
   # Vector of waiting times when the current selling price jumps for the first time
   # to a strictly larger value than the corresponding reserve price.
   T0_vec <- rep(0, N.auction)
-  # Sold.Auctions.indexes[which(Sold.Auctions.indexes!=0)] is the vector of all the auction indexes where the item has been sold.
+  # Sold.Auctions.indexes[which(Sold.Auctions.indexes!=0)] is the vector of all the auction
+  # indexes where the item has been sold.
   Sold.Auctions.indexes <- rep(0, N.auction)
   obs.bids<- rep(0, N.auction)
   # List containing values and intermediate times of all the standing price
@@ -183,10 +184,12 @@ Data.Gen.2nd.Price.Processed <- function(Raw.data.list){
       cum.jump.times <- Raw.data.list$Raw.biddata.list[[jj]][,3][inds]
       # Vector (T_0, T_1, ...., T_M)'
       inter.arrival.time <- diff(c(0,cum.jump.times, auction.window))
-      # Pooled data of reserve prices, standing prices, inter arrival times (including T_0) for all the auctions.
+      # Pooled data of reserve prices, standing prices, inter arrival times (including T_0)
+      # for all the auctions.
       pooled.data <- rbind(pooled.data, 
                            cbind(c(reserve.price[jj], xx[inds]),inter.arrival.time) )
-      # Pooled data of reserve prices, standing prices, inter arrival times (including T_0) for all the auctions.
+      # Pooled data of reserve prices, standing prices, inter arrival times (including T_0)
+      # for all the auctions.
       pooled.observed.bids <- c(pooled.observed.bids, xx[inds])
       selling.price[jj] <- tail(xx[inds], n=1)
       # First jump value / first change in standing price for the jth auction.
@@ -228,7 +231,8 @@ General_Log_Likelihood_fn_2ndPrice <- function( data, lambda, theta){
   T0.sold.vec <- data$T0_vec[ss.non.zero]
   # Total Number of observed bids for all the auctions.
   LL <- length(data$pooled.observed.bids)  
-  # Vector/Set of ranks/positions of the selling prices of all the auctions (where item is sold) in the pooled data set.
+  # Vector/Set of ranks/positions of the selling prices of all the auctions
+  # (where item is sold) in the pooled data set.
   SS.sold <- match(data$selling.price[ss.non.zero], data$pooled.data[ ,1])
   # This is vector: (uo, u1, u2,...,uL).
   RankXi <- sort(c(0, match(data$pooled.observed.bids, data$pooled.data[ ,1]))) 
@@ -244,7 +248,9 @@ General_Log_Likelihood_fn_2ndPrice <- function( data, lambda, theta){
                                  function(i) {prod(theta[(RankXi[i]+1) : RankXi[i+1]])})
     term_with_theta_2nd_term <- sum(log(1 - partial.prod.theta)) + sum((LL - sapply(1:(length(theta)), function(kk) {sum(RankXi < kk)})) * log(theta))
   }
-  # Above if condition takes care of the case when any of the auctions do not have any observed bid i.e. LL = 0 case.
+  # Above if condition takes care of the case when any of the auctions do not have any
+  # change in the standing prices from their respective reserve prices throughout the
+  # course of the auction, i.e. LL = 0 case.
   return(term_without_theta + term_with_theta_1st_term + term_with_theta_2nd_term)
 }
 
@@ -455,8 +461,10 @@ initialization.2nd.price <- function(data, reserve.price.Cutoff){
     return(numerator/denominator)
   }
   
-  # Removing the NA terms and those auction's first jump values whose reserve prices are comparatively higher.
-  # We are taking those auctions whose reserve prices are less than an user-specified reserve.price.Cutoff.
+  # Removing the NA terms and those auction's first jump values whose
+  # reserve prices are comparatively higher.
+  # We are taking those auctions whose reserve prices are less than an
+  # user-specified reserve.price.Cutoff.
   selling.price <- data$selling.price[intersect(which(data$reserve.price < reserve.price.Cutoff), 
                                                 which(is.na(data$selling.price)==FALSE))]
   
@@ -466,8 +474,10 @@ initialization.2nd.price <- function(data, reserve.price.Cutoff){
     return(Selling.price.cdf.inverse(G.n(x)))
   }
   
-  # Removing the NA terms and those auction's first jump values whose reserve prices are comparatively higher.
-  # We are taking those auctions whose reserve prices are less than an user-specified reserve.price.Cutoff.
+  # Removing the NA terms and those auction's first jump values whose
+  # reserve prices are comparatively higher.
+  # We are taking those auctions whose reserve prices are less than an
+  # user-specified reserve.price.Cutoff.
   first.jumps.vec <- data$first.jumps[intersect(which(data$reserve.price < reserve.price.Cutoff),
                                                 which(is.na(data$first.jumps)==FALSE))]
   
